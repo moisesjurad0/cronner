@@ -1,3 +1,4 @@
 # tkinter
 # time
 plyer
+PyQt5
