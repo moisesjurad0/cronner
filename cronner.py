@@ -1,27 +1,59 @@
+import sys
 import time
-from plyer import notification
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
+from PyQt5.QtCore import QTimer, Qt
 
-# Configuración del cronómetro
-total_time = 15 * 60  # 15 minutos en segundos
-total_cuts = 50
-cut_interval = total_time / total_cuts  # Intervalo de tiempo entre cortes
+class ExamCronometro(QMainWindow):
+    def __init__(self):
+        super().__init__()
 
-# Iniciar el cronómetro
-for cut_number in range(1, total_cuts + 1):
-    remaining_time = total_time - (cut_number - 1) * cut_interval
-    minutes, seconds = divmod(int(remaining_time), 60)
+        self.setWindowTitle("Cronómetro de Examen")
+        self.setGeometry(100, 100, 400, 300)
 
-    # Mostrar notificación
-    notification_title = "Cronómetro"
-    notification_message = f"Corte #{cut_number}: {minutes} minutos {seconds} segundos"
-    notification.notify(
-        title=notification_title,
-        message=notification_message,
-        app_name="CronometroApp",
-    )
+        self.timer_label = QLabel("Tiempo transcurrido: 00:00")
+        self.timer_label.setAlignment(Qt.AlignCenter)
+        self.timer_label.setStyleSheet("font-size: 24px; font-family: Arial;")
 
-    if cut_number < total_cuts:
-        # Esperar hasta el próximo corte
-        time.sleep(cut_interval)
+        self.question_label = QLabel("Pregunta actual: 0/50")
+        self.question_label.setAlignment(Qt.AlignCenter)
+        self.question_label.setStyleSheet("font-size: 24px; font-family: Arial;")
 
-print("Cronómetro finalizado")
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.timer_label)
+        self.layout.addWidget(self.question_label)
+
+        self.central_widget = QWidget()
+        self.central_widget.setLayout(self.layout)
+        self.setCentralWidget(self.central_widget)
+
+        self.total_time = 15 * 60
+        self.remaining_time = self.total_time
+        self.total_questions = 50
+        self.question_number = 0
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_timer)
+        self.timer.start(1000)
+
+    def update_timer(self):
+        if self.remaining_time <= 0:
+            self.timer.stop()
+            self.timer_label.setText("Tiempo transcurrido: 15:00")
+            return
+
+        minutes, seconds = divmod(self.remaining_time, 60)
+        time_display = f"Tiempo transcurrido: {minutes:02}:{seconds:02}"
+        self.timer_label.setText(time_display)
+        self.remaining_time -= 1
+
+        # Actualiza el número de pregunta proporcionalmente
+        time_per_question = self.total_time / self.total_questions
+        questions_completed = (self.total_time - self.remaining_time) / time_per_question
+        self.question_number = int(questions_completed) + 1
+        self.question_label.setText(f"Pregunta actual: {self.question_number}/{self.total_questions}")
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = ExamCronometro()
+    window.show()
+    sys.exit(app.exec_())
