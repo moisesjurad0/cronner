@@ -8,7 +8,15 @@ class ExamCronometro(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Cronómetro de Examen")
-        self.setGeometry(100, 100, 400, 400)
+
+        # Ajusta el tamaño de la ventana reduciendo un 30% la altura y aumentando un 30% el ancho
+        self.setGeometry(100, 100, int(300 * 1.3), int(300 * 0.7))
+
+        # Impide la maximización de la ventana
+        self.setFixedSize(int(300 * 1.3), int(300 * 0.7))
+
+        # Mantén la ventana siempre en la parte superior
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
 
         self.timer_label = QLabel("Tiempo transcurrido: 00:00")
         self.timer_label.setAlignment(Qt.AlignCenter)
@@ -24,7 +32,7 @@ class ExamCronometro(QMainWindow):
 
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.timer_label)
-        self.layout.addWidget(self.time_per_question_label)  # Cambia el orden
+        self.layout.addWidget(self.time_per_question_label)
         self.layout.addWidget(self.question_label)
 
         self.central_widget = QWidget()
