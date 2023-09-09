@@ -8,11 +8,15 @@ class ExamCronometro(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Cronómetro de Examen")
-        self.setGeometry(100, 100, 400, 300)
+        self.setGeometry(100, 100, 400, 400)
 
         self.timer_label = QLabel("Tiempo transcurrido: 00:00")
         self.timer_label.setAlignment(Qt.AlignCenter)
         self.timer_label.setStyleSheet("font-size: 24px; font-family: Arial;")
+
+        self.time_per_question_label = QLabel("Tiempo por pregunta: 00:00")
+        self.time_per_question_label.setAlignment(Qt.AlignCenter)
+        self.time_per_question_label.setStyleSheet("font-size: 24px; font-family: Arial;")
 
         self.question_label = QLabel("Pregunta actual: 0/50")
         self.question_label.setAlignment(Qt.AlignCenter)
@@ -20,6 +24,7 @@ class ExamCronometro(QMainWindow):
 
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.timer_label)
+        self.layout.addWidget(self.time_per_question_label)  # Cambia el orden
         self.layout.addWidget(self.question_label)
 
         self.central_widget = QWidget()
@@ -39,6 +44,7 @@ class ExamCronometro(QMainWindow):
         if self.remaining_time <= 0:
             self.timer.stop()
             self.timer_label.setText("Tiempo transcurrido: 15:00")
+            self.time_per_question_label.setText("Tiempo por pregunta: 00:00")
             return
 
         minutes, seconds = divmod(self.remaining_time, 60)
@@ -51,6 +57,12 @@ class ExamCronometro(QMainWindow):
         questions_completed = (self.total_time - self.remaining_time) / time_per_question
         self.question_number = int(questions_completed) + 1
         self.question_label.setText(f"Pregunta actual: {self.question_number}/{self.total_questions}")
+
+        # Actualiza el tiempo por pregunta
+        remaining_per_question = self.remaining_time % time_per_question
+        minutes, seconds = divmod(int(remaining_per_question), 60)  # Convertir a enteros
+        time_per_question_display = f"Tiempo por pregunta: {minutes:02}:{seconds:02}"
+        self.time_per_question_label.setText(time_per_question_display)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
