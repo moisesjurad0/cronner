@@ -106,7 +106,7 @@ class ExamCronometro(QMainWindow):
         sys.exit()
 
     def flash_window(self):
-        self.setStyleSheet("background-color: red;")  # Cambia el fondo de la ventana a rojo
+        self.setStyleSheet("background-color: #00855d;")  # Cambia el fondo de la ventana a verde cobalto (#0047ab)
         QTimer.singleShot(300, self.restore_background)  # Restaura el fondo después de 300 ms
 
     def restore_background(self):
