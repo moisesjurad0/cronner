@@ -1,6 +1,8 @@
 import sys
 import time
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QPushButton
+import configparser
+from pathlib import Path
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QSpinBox
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QTimer, Qt, QSize
 
@@ -8,16 +10,18 @@ class ExamCronometro(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.load_configuration()  # Carga la configuración desde el archivo config.ini
+
         self.setWindowTitle("Cronómetro de Examen")
-        self.setGeometry(100, 100, int(300 * 1.3), int(300 * 0.7))
-        self.setFixedSize(int(300 * 1.3), int(300 * 0.7))
+        self.setGeometry(100, 100, int(self.window_width * 1.3), int(self.window_height * 0.7))
+        self.setFixedSize(int(self.window_width * 1.3), int(self.window_height * 0.7))
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
 
         self.timer_label = QLabel("Tiempo transcurrido: 00:00")
         self.timer_label.setAlignment(Qt.AlignCenter)
         self.timer_label.setStyleSheet("font-size: 24px; font-family: Arial;")
 
-        self.time_per_question_label = QLabel("Tiempo por pregunta: 00:00")
+        self.time_per_question_label = QLabel("Tiempo por pregunta: 00:00:00")
         self.time_per_question_label.setAlignment(Qt.AlignCenter)
         self.time_per_question_label.setStyleSheet("font-size: 24px; font-family: Arial;")
 
@@ -68,9 +72,10 @@ class ExamCronometro(QMainWindow):
         self.central_widget.setLayout(self.layout)
         self.setCentralWidget(self.central_widget)
 
-        self.total_time = 15 * 60
+        self.total_time_hours = self.total_time // 3600
+        self.total_time_minutes = (self.total_time % 3600) // 60
+        self.total_time_secs = self.total_time % 60
         self.remaining_time = self.total_time
-        self.total_questions = 50
         self.question_number = 0
         self.timer_running = True
 
@@ -78,6 +83,48 @@ class ExamCronometro(QMainWindow):
         self.timer.timeout.connect(self.update_timer)
 
         self.init_timer()  # Inicializa el cronómetro
+
+    def load_configuration(self):
+        config_file = Path("config.ini")
+
+        if not config_file.exists():
+            config = configparser.ConfigParser()
+            config["Settings"] = {
+                "window_width": "300",
+                "window_height": "300",
+                "total_time_hours": "0",
+                "total_time_minutes": "15",
+                "total_time_secs": "0",
+                "total_questions": "50"
+            }
+
+            with open(config_file, "w") as f:
+                config.write(f)
+
+        config = configparser.ConfigParser()
+        config.read(config_file)
+
+        self.window_width = int(config["Settings"]["window_width"])
+        self.window_height = int(config["Settings"]["window_height"])
+        self.total_time_hours = int(config["Settings"]["total_time_hours"])
+        self.total_time_minutes = int(config["Settings"]["total_time_minutes"])
+        self.total_time_secs = int(config["Settings"]["total_time_secs"])
+        self.total_questions = int(config["Settings"]["total_questions"])
+        self.total_time = (self.total_time_hours * 3600) + (self.total_time_minutes * 60) + self.total_time_secs
+
+    def save_configuration(self):
+        config = configparser.ConfigParser()
+        config["Settings"] = {
+            "window_width": str(self.width()),
+            "window_height": str(self.height()),
+            "total_time_hours": str(self.total_time_hours),
+            "total_time_minutes": str(self.total_time_minutes),
+            "total_time_secs": str(self.total_time_secs),
+            "total_questions": str(self.total_questions)
+        }
+
+        with open("config.ini", "w") as f:
+            config.write(f)
 
     def init_timer(self):
         self.timer.start(1000)
@@ -103,10 +150,11 @@ class ExamCronometro(QMainWindow):
         self.init_timer()
 
     def shutdown_app(self):
+        self.save_configuration()
         sys.exit()
 
     def flash_window(self):
-        self.setStyleSheet("background-color: #00855d;")  # Cambia el fondo de la ventana a verde cobalto (#0047ab)
+        self.setStyleSheet("background-color: green;")  # Cambia el fondo de la ventana a verde
         QTimer.singleShot(300, self.restore_background)  # Restaura el fondo después de 300 ms
 
     def restore_background(self):
@@ -114,11 +162,12 @@ class ExamCronometro(QMainWindow):
 
     def update_labels(self):
         if self.remaining_time <= 0:
-            self.timer_label.setText("Tiempo transcurrido: 15:00")
-            self.time_per_question_label.setText("Tiempo por pregunta: 00:00")
+            self.timer_label.setText(f"Tiempo transcurrido: {self.total_time_hours:02}:{self.total_time_minutes:02}:{self.total_time_secs:02}")
+            self.time_per_question_label.setText(f"Tiempo por pregunta: {self.total_time_hours:02}:{self.total_time_minutes:02}:{self.total_time_secs:02}")
         else:
             minutes, seconds = divmod(self.remaining_time, 60)
-            time_display = f"Tiempo transcurrido: {minutes:02}:{seconds:02}"
+            hours, minutes = divmod(minutes, 60)
+            time_display = f"Tiempo transcurrido: {hours:02}:{minutes:02}:{seconds:02}"
             self.timer_label.setText(time_display)
 
             time_per_question = self.total_time / self.total_questions
@@ -133,7 +182,8 @@ class ExamCronometro(QMainWindow):
 
             remaining_per_question = self.remaining_time % time_per_question
             minutes, seconds = divmod(int(remaining_per_question), 60)
-            time_per_question_display = f"Tiempo por pregunta: {minutes:02}:{seconds:02}"
+            hours, minutes = divmod(minutes, 60)
+            time_per_question_display = f"Tiempo por pregunta: {hours:02}:{minutes:02}:{seconds:02}"
             self.time_per_question_label.setText(time_per_question_display)
 
     def update_timer(self):
