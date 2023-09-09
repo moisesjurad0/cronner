@@ -105,6 +105,13 @@ class ExamCronometro(QMainWindow):
     def shutdown_app(self):
         sys.exit()
 
+    def flash_window(self):
+        self.setStyleSheet("background-color: red;")  # Cambia el fondo de la ventana a rojo
+        QTimer.singleShot(300, self.restore_background)  # Restaura el fondo después de 300 ms
+
+    def restore_background(self):
+        self.setStyleSheet("")  # Restaura el fondo predeterminado de la ventana
+
     def update_labels(self):
         if self.remaining_time <= 0:
             self.timer_label.setText("Tiempo transcurrido: 15:00")
@@ -116,7 +123,12 @@ class ExamCronometro(QMainWindow):
 
             time_per_question = self.total_time / self.total_questions
             questions_completed = (self.total_time - self.remaining_time) / time_per_question
-            self.question_number = int(questions_completed) + 1
+            new_question_number = int(questions_completed) + 1
+
+            if new_question_number != self.question_number:  # Comprueba si ha cambiado el número de pregunta
+                self.flash_window()  # Activa el parpadeo al cambiar la pregunta
+                self.question_number = new_question_number
+
             self.question_label.setText(f"Pregunta actual: {self.question_number}/{self.total_questions}")
 
             remaining_per_question = self.remaining_time % time_per_question
